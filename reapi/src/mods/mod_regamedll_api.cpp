@@ -2,6 +2,7 @@
 
 IReGameApi *g_ReGameApi;
 const ReGameFuncs_t *g_ReGameFuncs;
+const ReGameBotFuncs_t *g_ReGameBotFuncs;
 IReGameHookchains *g_ReGameHookchains;
 CGameRules *g_pGameRules = nullptr;
 
@@ -56,6 +57,7 @@ bool RegamedllApi_Init()
 	}
 
 	g_ReGameFuncs = g_ReGameApi->GetFuncs();
+	g_ReGameBotFuncs = g_ReGameApi->GetBotFuncs();
 	g_ReGameHookchains = g_ReGameApi->GetHookchains();
 
 	// Safe check CCSEntity API interface version
