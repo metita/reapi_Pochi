@@ -53,3 +53,5 @@ enum ConnectInfoData_e
     e_index,
     e_update
 };
+
+typedef std::list<ConnectInfoData *> ConnectInfoList;
