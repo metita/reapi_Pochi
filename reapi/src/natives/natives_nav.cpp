@@ -60,9 +60,13 @@ cell AMX_NATIVE_CALL rg_get_closest_point_in_area(AMX *amx, cell *params)
 {
     enum args_e { arg_count, arg_area, arg_origin, arg_position};
 
-    CAmxArgs args(amx, params);
-    CNavArea *area = args[arg_area];
+    cell *pArea = getAmxAddr(amx, params[arg_area]);
 
+    if(!pArea)
+        return FALSE;
+
+    CNavArea *area = reinterpret_cast<CNavArea*>(pArea);
+    
     // Invalid
     if(!area)
         return FALSE;
@@ -85,34 +89,43 @@ cell AMX_NATIVE_CALL rg_get_closest_point_in_area(AMX *amx, cell *params)
 * @param route              route type, see RouteType
 * @param length             max length of the path
 *
-* @return                   number of paths 
+* @return                   connect info pointer 
 *
 * native ConnectInfo:rg_compute_path(cons ConnectInfo:cInfo, const startArea, const Float:vStart[3], goalarea, const Float:vGoal[3], RouteType:route)
 */
 cell AMX_NATIVE_CALL rg_compute_path(AMX* amx, cell *params)
 {
     enum args_e { arg_count, arg_data, arg_startarea, arg_vecstart, arg_goalarea, arg_vecgoal, arg_routetype };
-    CAmxArgs args(amx, params);
-
-    // get areas, goalarea can be invalid if computepath was not provided
-    CNavArea *startarea = args[arg_startarea];
     
-    // invalid
-    if (!startarea)
+    // get areas, goalarea can be invalid if computepath was not provided
+    cell *pArea = getAmxAddr(amx, params[arg_startarea]);
+
+    if(!pArea)
         return 0;
     
-    int length = 0;
-    CNavArea *goalarea = args[arg_goalarea];
+    CNavArea *startarea = reinterpret_cast<CNavArea*>(pArea);
+
+    // invalid
+    if (!startarea)
+        return 0;    
+
+    // cast data pointer
+    ConnectInfoData *data = nullptr;
+    cell *ptr = getAmxAddr(amx, params[arg_data]);
+
+    if(ptr)
+        data = reinterpret_cast<ConnectInfoData*>(ptr);
+
+    CNavArea *goalarea = nullptr;
+    pArea = getAmxAddr(amx, params[arg_goalarea]);
+
+    if(pArea)
+        goalarea = reinterpret_cast<CNavArea*>(pArea);
+
     Vector* startvec = (Vector *)getAmxAddr(amx, params[arg_vecstart]);
     Vector* goalvec = (Vector *)getAmxAddr(amx, params[arg_vecgoal]);
 
     RouteType route = static_cast<RouteType>(params[arg_routetype]);
-
-    // Get pointer
-    ConnectInfoData *data = nullptr;
-    
-    if (params[arg_data])
-        data = reinterpret_cast<ConnectInfoData*>(params[arg_data]);
 
     data = g_ReGameFuncs->ComputePath(data, startarea, startvec, goalarea, goalvec, route);
     return reinterpret_cast<cell>(data);
@@ -144,11 +157,12 @@ cell AMX_NATIVE_CALL rg_remove_connect_info(AMX* amx, cell *params)
 {
     enum args_e { arg_count, arg_data };
 
-    ConnectInfoData *data = nullptr;
-    
-    if(params[arg_data])
-        data = reinterpret_cast<ConnectInfoData*>(params[arg_data]);
+    cell *ptr = getAmxAddr(amx, params[arg_data]);
 
+    if(!ptr)
+        return FALSE;
+    
+    ConnectInfoData *data = reinterpret_cast<ConnectInfoData*>(ptr);
     bool bDestroyed = g_ReGameFuncs->RemoveConnectInfoList(data);
 
     if(bDestroyed)
@@ -189,17 +203,15 @@ cell AMX_NATIVE_CALL rg_get_connect_info_data(AMX* amx, cell *params)
 {
     enum args_e { arg_count, arg_pointer, arg_data_enum, arg_return, arg_index };
 
-    ConnectInfoData *data = nullptr;
-    
-    if(params[arg_pointer])
-        data = reinterpret_cast<ConnectInfoData*>(params[arg_pointer]);
+    cell *ptr = getAmxAddr(amx, params[arg_pointer]);
 
-    if(!data)
+    if(!ptr)
     {
         AMXX_LogError(amx, AMX_ERR_NATIVE, "%s: Invalid connect info provided", __FUNCTION__);
         return 0;
     }
 
+    ConnectInfoData *data = reinterpret_cast<ConnectInfoData*>(ptr);
     ConnectInfoData_e data_enum = static_cast<ConnectInfoData_e>(params[arg_data_enum]);
 
     switch(data_enum)
@@ -270,17 +282,15 @@ cell AMX_NATIVE_CALL rg_set_connect_info_data(AMX* amx, cell *params)
 {
     enum args_e { arg_count, arg_pointer, arg_data_enum, arg_value, arg_index };
 
-    ConnectInfoData *data = nullptr;
-    
-    if(params[arg_pointer])
-        data = reinterpret_cast<ConnectInfoData*>(params[arg_pointer]);
+    cell *ptr = getAmxAddr(amx, params[arg_pointer]);
 
-    if(!data)
+    if(!ptr)
     {
         AMXX_LogError(amx, AMX_ERR_NATIVE, "%s: Invalid connect info provided", __FUNCTION__);
         return 0;
     }
 
+    ConnectInfoData *data = reinterpret_cast<ConnectInfoData*>(ptr);
     ConnectInfoData_e data_enum = static_cast<ConnectInfoData_e>(params[arg_data_enum]);
 
     switch(data_enum)
