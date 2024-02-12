@@ -277,6 +277,7 @@
     <ClCompile Include="..\src\natives\natives_hookchains.cpp" />
     <ClCompile Include="..\src\natives\natives_members.cpp" />
     <ClCompile Include="..\src\natives\natives_misc.cpp" />
+    <ClCompile Include="..\src\natives\natives_nav.cpp" />
     <ClCompile Include="..\src\natives\natives_rechecker.cpp" />
     <ClCompile Include="..\src\natives\natives_reunion.cpp" />
     <ClCompile Include="..\src\natives\natives_vtc.cpp" />

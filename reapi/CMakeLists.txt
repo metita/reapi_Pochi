@@ -124,6 +124,7 @@ set(REAPI_SRCS
 	"src/natives/natives_hookchains.cpp"
 	"src/natives/natives_members.cpp"
 	"src/natives/natives_misc.cpp"
+	"src/natives/natives_nav.cpp"
 	"src/natives/natives_rechecker.cpp"
 	"src/natives/natives_reunion.cpp"
 	"src/natives/natives_vtc.cpp"

@@ -115,7 +115,16 @@ public:
 
 	// begin following "leader"
 	void Follow(CBasePlayer *leader) { m_followState.SetLeader(leader); m_behavior.SetState(&m_followState); }
-	bool IsFollowing(const CBaseEntity *leader = NULL) const { return m_behavior.IsState(&m_followState); }
+	bool IsFollowing(const CBaseEntity *pLeader = nullptr) const
+	{
+		if (!m_behavior.IsState(&m_followState))
+			return false;
+
+		if (pLeader && pLeader != m_followState.GetLeader())
+			return false;
+
+		return true;
+	}
 
 	// Escape
 	void Escape() { m_behavior.SetState(&m_escapeState); }
@@ -286,6 +295,7 @@ public:
 		m_velDir = improv->GetActualVelocity();
 		m_speed = m_velDir.NormalizeInPlace();
 	}
+
 	bool operator()(CBaseEntity *entity)
 	{
 		const float space = 1.0f;

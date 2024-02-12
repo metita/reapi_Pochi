@@ -108,12 +108,10 @@ public:
 	}
 	bool IsFollowing(const CBaseEntity *entity = NULL)
 	{
-		if (m_improv != NULL)
-		{
+		if (m_improv)
 			return m_improv->IsFollowing();
-		}
 
-		if (entity == NULL && m_hTargetEnt == NULL || (entity != NULL && m_hTargetEnt != entity))
+		if ((!entity && !m_hTargetEnt) || (entity != NULL && m_hTargetEnt != entity))
 			return false;
 
 		if (m_State != FOLLOW)
