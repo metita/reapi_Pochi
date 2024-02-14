@@ -40,10 +40,14 @@ struct ConnectInfo_api
 
 struct ConnectInfoData
 {
+	CBaseEntity* entity;		// path entity
 	ConnectInfo_api *path;		// path pointer
+	Vector currentGoal;			// path current goal (fast access)
 	int length;					// path length
 	int index;					// path current index
     float update;               // path next update
+	float update_min;			// path min delay update
+	float update_max;			// path max delay update
 };
 
 enum ConnectInfoData_e
@@ -51,7 +55,8 @@ enum ConnectInfoData_e
     e_path,
     e_length,
     e_index,
-    e_update
+    e_update,
+	e_goal
 };
 
 typedef std::list<ConnectInfoData *> ConnectInfoList;

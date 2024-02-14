@@ -65,7 +65,7 @@ cell AMX_NATIVE_CALL rg_get_closest_point_in_area(AMX *amx, cell *params)
     if(!pArea)
         return FALSE;
 
-    CNavArea *area = reinterpret_cast<CNavArea*>(pArea);
+    CNavArea *area = reinterpret_cast<CNavArea*>(params[arg_area]);
     
     // Invalid
     if(!area)
@@ -81,91 +81,117 @@ cell AMX_NATIVE_CALL rg_get_closest_point_in_area(AMX *amx, cell *params)
 /*
 * Generates a new path from current position to goal
 * 
+* @param entity             entity index (used for unique data)
 * @param connectinfo        connect info pointer (can be 0)
 * @param startArea          starting area
 * @param vStart             starting vector
 * @param goalarea           goal area (not needed, but should be provided)
 * @param vGoal              goal vector
 * @param route              route type, see RouteType
-* @param length             max length of the path
 *
 * @return                   connect info pointer 
 *
-* native ConnectInfo:rg_compute_path(cons ConnectInfo:cInfo, const startArea, const Float:vStart[3], goalarea, const Float:vGoal[3], RouteType:route)
+* native ConnectInfo:rg_compute_path(const entity, ConnectInfo:cInfo, const startArea, const Float:vStart[3], goalarea, const Float:vGoal[3], RouteType:route)
 */
 cell AMX_NATIVE_CALL rg_compute_path(AMX* amx, cell *params)
 {
-    enum args_e { arg_count, arg_data, arg_startarea, arg_vecstart, arg_goalarea, arg_vecgoal, arg_routetype };
+    enum args_e { arg_count, arg_entity, arg_data, arg_startarea, arg_vecstart, arg_goalarea, arg_vecgoal, arg_routetype };
     
+    CAmxArgs args(amx, params);
+    CBaseEntity *entity = nullptr;
+    ConnectInfoData *data = nullptr;
+
+    // if an entity was provided, do this
+    if(args[arg_entity])
+    {
+        CHECK_ISENTITY(arg_entity);
+        entity = args[arg_entity];
+    }
+
+    // cast data pointer
+    cell *ptr = getAmxAddr(amx, params[arg_data]);
+
+    if(ptr)
+        data = reinterpret_cast<ConnectInfoData*>(params[arg_data]);
+
     // get areas, goalarea can be invalid if computepath was not provided
     cell *pArea = getAmxAddr(amx, params[arg_startarea]);
 
     if(!pArea)
-        return 0;
-    
-    CNavArea *startarea = reinterpret_cast<CNavArea*>(pArea);
+    {
+        UTIL_ServerPrint("Invalid start area provided\n");
+        return reinterpret_cast<cell>(data);
+    }
+
+    CNavArea *startarea = reinterpret_cast<CNavArea*>(params[arg_startarea]);
 
     // invalid
     if (!startarea)
-        return 0;    
-
-    // cast data pointer
-    ConnectInfoData *data = nullptr;
-    cell *ptr = getAmxAddr(amx, params[arg_data]);
-
-    if(ptr)
-        data = reinterpret_cast<ConnectInfoData*>(ptr);
+    {
+        UTIL_ServerPrint("Invalid start area cast provided\n");
+        return reinterpret_cast<cell>(data);
+    }
 
     CNavArea *goalarea = nullptr;
     pArea = getAmxAddr(amx, params[arg_goalarea]);
 
     if(pArea)
-        goalarea = reinterpret_cast<CNavArea*>(pArea);
+        goalarea = reinterpret_cast<CNavArea*>(params[arg_goalarea]);
 
     Vector* startvec = (Vector *)getAmxAddr(amx, params[arg_vecstart]);
     Vector* goalvec = (Vector *)getAmxAddr(amx, params[arg_vecgoal]);
 
     RouteType route = static_cast<RouteType>(params[arg_routetype]);
 
-    data = g_ReGameFuncs->ComputePath(data, startarea, startvec, goalarea, goalvec, route);
-    return reinterpret_cast<cell>(data);
+    ConnectInfoData *retData;
+    retData = g_ReGameFuncs->ComputePath(entity, data, startarea, startvec, goalarea, goalvec, route);
+    UTIL_ServerPrint("Path computed, data: %d\n", reinterpret_cast<cell>(retData));
+    return reinterpret_cast<cell>(retData);
 }
 
 /*
 * Creates a connect info pointer
 *
+* @param                    entity (can be null)
+*
 * @return                   connect info pointer
 *
-* native rg_create_connect_info();
+* native rg_create_connect_info(const entity);
 */
 cell AMX_NATIVE_CALL rg_create_connect_info(AMX* amx, cell *params)
 {
-    ConnectInfoData *data = g_ReGameFuncs->AddConnectInfoList();
+    enum args_e { arg_count, arg_entity };    
+    
+    CHECK_ISENTITY(arg_entity);
+    
+    CAmxArgs args(amx, params);
+    CBaseEntity *entity = args[arg_entity];
+
+    ConnectInfoData *data = g_ReGameFuncs->AddConnectInfoList(entity);
     return reinterpret_cast<cell>(data);
 }
 
 /*
-* Deletes a connect info from the path list
+* Deletes a connect info from entity
 * 
-* @param pPath              ConnectInfo pointer
+* @param entity             entity (can be null)
 *
 * @return                   true if was valid, false otherwise
 *
-* native rg_remove_connect_info(ConnectInfo:&pPath);
+* native rg_remove_connect_info(const entity);
 */
 cell AMX_NATIVE_CALL rg_remove_connect_info(AMX* amx, cell *params)
 {
-    enum args_e { arg_count, arg_data };
-
-    cell *ptr = getAmxAddr(amx, params[arg_data]);
-
-    if(!ptr)
-        return FALSE;
+    enum args_e { arg_count, arg_entity, arg_data };    
     
-    ConnectInfoData *data = reinterpret_cast<ConnectInfoData*>(ptr);
-    bool bDestroyed = g_ReGameFuncs->RemoveConnectInfoList(data);
+    CHECK_ISENTITY(arg_entity);
+    
+    CAmxArgs args(amx, params);
+    CBaseEntity *entity = args[arg_entity];
+    
+    bool bDestroyed = g_ReGameFuncs->RemoveConnectInfoList(entity);
 
-    if(bDestroyed)
+    if(bDestroyed && PARAMS_COUNT == arg_data)
     {
         // update param to avoid errors
         cell *valRet = getAmxAddr(amx, params[arg_data]);
@@ -203,6 +229,7 @@ cell AMX_NATIVE_CALL rg_get_connect_info_data(AMX* amx, cell *params)
 {
     enum args_e { arg_count, arg_pointer, arg_data_enum, arg_return, arg_index };
 
+    //CAmxArgs args(amx, params);
     cell *ptr = getAmxAddr(amx, params[arg_pointer]);
 
     if(!ptr)
@@ -211,39 +238,52 @@ cell AMX_NATIVE_CALL rg_get_connect_info_data(AMX* amx, cell *params)
         return 0;
     }
 
-    ConnectInfoData *data = reinterpret_cast<ConnectInfoData*>(ptr);
+    ConnectInfoData *data = reinterpret_cast<ConnectInfoData*>(params[arg_pointer]);
     ConnectInfoData_e data_enum = static_cast<ConnectInfoData_e>(params[arg_data_enum]);
 
     switch(data_enum)
     {
         case e_path:
         {
+            int index;
+
             if(PARAMS_COUNT < arg_index)
-            {
-                AMXX_LogError(amx, AMX_ERR_NATIVE, "%s: Not enough parameters (using: %d) (needed: %d)", __FUNCTION__, PARAMS_COUNT, arg_index);
-                return 0;
-            }
+                index = data->index;
+            else
+                index = params[arg_index];
 
-            int index = params[arg_index];
+            //cell *cRet = getAmxAddr(amx, params[arg_index]);
 
-            if(index < 0 || index > MAX_PATH_LENGTH_API)
+            if(index < 0 || index >= MAX_PATH_LENGTH_API)
             {
-                AMXX_LogError(amx, AMX_ERR_NATIVE, "%s: index out of bounds (%d)", __FUNCTION__, index);
+                AMXX_LogError(amx, AMX_ERR_NATIVE, "%s: e_path->index out of bounds (%d)", __FUNCTION__, index);
                 return 0;
             }
 
             int length = data->length;
-            Vector* vecRet = (Vector *)getAmxAddr(amx, params[arg_return]);
-
-            if(length < index)
-            {
-                // Avoids unitialized errors
-                vecRet[0] = vecRet[1] = vecRet[2] = Vector(0, 0, 0);
-                return 0;
-            }
+            
+            // get latest then
+            if(index >= length)
+                index = length - 1;
+                
+            cell *vecRet = getAmxAddr(amx, params[arg_return]);
+            Vector pos = data->path[index].pos;
 
             // copy vector
-            *vecRet = data->path->pos;
+            vecRet[0] = amx_ftoc(pos.x);
+            vecRet[1] = amx_ftoc(pos.y);
+            vecRet[2] = amx_ftoc(pos.z);
+            return 1;
+        }
+        case e_goal:
+        {
+            cell *vecRet = getAmxAddr(amx, params[arg_return]);
+            Vector pos = data->currentGoal;
+
+            // copy vector
+            vecRet[0] = amx_ftoc(pos.x);
+            vecRet[1] = amx_ftoc(pos.y);
+            vecRet[2] = amx_ftoc(pos.z);
             return 1;
         }
         case e_length:
@@ -282,6 +322,7 @@ cell AMX_NATIVE_CALL rg_set_connect_info_data(AMX* amx, cell *params)
 {
     enum args_e { arg_count, arg_pointer, arg_data_enum, arg_value, arg_index };
 
+    CAmxArgs args(amx, params);
     cell *ptr = getAmxAddr(amx, params[arg_pointer]);
 
     if(!ptr)
@@ -290,7 +331,7 @@ cell AMX_NATIVE_CALL rg_set_connect_info_data(AMX* amx, cell *params)
         return 0;
     }
 
-    ConnectInfoData *data = reinterpret_cast<ConnectInfoData*>(ptr);
+    ConnectInfoData *data = reinterpret_cast<ConnectInfoData*>(params[arg_pointer]);
     ConnectInfoData_e data_enum = static_cast<ConnectInfoData_e>(params[arg_data_enum]);
 
     switch(data_enum)
@@ -315,6 +356,36 @@ cell AMX_NATIVE_CALL rg_set_connect_info_data(AMX* amx, cell *params)
     return 0;
 }
 
+/*
+* Check progress in current path
+*
+* @param entity                     entity
+* @param ConnectInfoData            path pointer (can be null)
+* @param tolerance                  dist tolerance
+* @param check2D                    if z (up down) is ignored                        
+*
+* @return                           true if changed
+*
+* native rg_update_path_movement(const entity, const ConnectInfo:connectInfo, Float:tolerance, bool:check2D);
+*/
+cell AMX_NATIVE_CALL rg_update_path_movement(AMX *amx, cell *params)
+{
+    enum args_e {  arg_count, arg_entity, arg_data, arg_tolerance, arg_check2d     };
+
+    CHECK_ISENTITY(arg_entity);
+    
+    CAmxArgs args(amx, params);
+    CBaseEntity *entity = args[arg_entity];
+
+    cell *ptr = getAmxAddr(amx, params[arg_data]);
+    ConnectInfoData *data = nullptr;
+    
+    if(ptr)
+        data = reinterpret_cast<ConnectInfoData*>(params[arg_data]);
+
+    return (cell)g_ReGameFuncs->UpdatePathMovement(entity, data, args[arg_tolerance], args[arg_check2d]);
+}
+
 AMX_NATIVE_INFO Nav_Natives_RG[] =
 {
 	{ "rg_load_navigation_map",         rg_load_navigation_map          },
@@ -324,6 +395,8 @@ AMX_NATIVE_INFO Nav_Natives_RG[] =
     { "rg_get_closest_point_in_area",   rg_get_closest_point_in_area    },
 
     { "rg_compute_path",                rg_compute_path                 },
+    { "rg_update_path_movement",        rg_update_path_movement         },
+
     { "rg_create_connect_info",         rg_create_connect_info          },
     { "rg_remove_connect_info",         rg_remove_connect_info          },
     { "rg_destroy_connect_info_list",   rg_destroy_connect_info_list    },

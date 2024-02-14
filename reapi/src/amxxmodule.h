@@ -501,4 +501,7 @@ inline cell* getAmxAddr(AMX *amx, cell amx_addr)
 	return (cell *)(amx->base + (size_t)(((AMX_HEADER *)amx->base)->dat + amx_addr));
 }
 
+// float to cell
+#define amx_ftoc(f)	( * ((cell*)&f) )
+
 #endif // __AMXXMODULE_H__
