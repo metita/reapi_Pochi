@@ -57,13 +57,6 @@ public:
 			return nullptr;
 		return UTIL_PlayerByIndex(m_value);
 	}
-	operator CNavArea*() const
-	{
-		if (m_value < 0)
-			return nullptr;
-		
-		return getPrivate<CNavArea>(m_value);
-	}
 	operator IGameClient *() const
 	{
 		if (m_value <= 0)
