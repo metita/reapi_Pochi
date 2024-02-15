@@ -819,11 +819,11 @@ struct ReGameFuncs_t {
 	class CGrenade *(*SpawnGrenade)(WeaponIdType weaponId, entvars_t *pevOwner, Vector &vecSrc, Vector &vecThrow, float time, int iTeam, unsigned short usEvent);
 
 	// navs
-	// navs
 	NavErrorType (*LoadNavigationMap)();
+	bool (*CheckNavigationmap)();
 	void (*DestroyNavigationMap)();
 
-	ConnectInfoData *(*AddConnectInfoList)(CBaseEntity *entity);
+	ConnectInfoData *(*AddConnectInfoList)(CBaseEntity *entity, float update_min, float update_max);
 	bool (*RemoveConnectInfoList)(CBaseEntity *entity);
 	void (*DestroyConnectInfoList)();
 
@@ -832,8 +832,6 @@ struct ReGameFuncs_t {
 
 	ConnectInfoData *(*ComputePath)(CBaseEntity *entity, ConnectInfoData *data, CNavArea *startArea, const Vector *start, CNavArea *goalArea, const Vector *goal, RouteType route);
 	bool (*UpdatePathMovement)(CBaseEntity *entity, ConnectInfoData *data, float tolerance, bool check2D);
-
-	ConnectInfoList *(*GetConnectInfoList)();
 };
 
 class IReGameApi {

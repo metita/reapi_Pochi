@@ -42,6 +42,7 @@ struct ConnectInfoData
 {
 	CBaseEntity* entity;		// path entity
 	ConnectInfo_api *path;		// path pointer
+	CNavArea *currentArea;		// path's current area
 	Vector currentGoal;			// path current goal (fast access)
 	int length;					// path length
 	int index;					// path current index
@@ -53,10 +54,15 @@ struct ConnectInfoData
 enum ConnectInfoData_e
 {
     e_path,
+	e_path_flags,
+	e_path_how,
+	e_area,
+	e_goal,
     e_length,
     e_index,
     e_update,
-	e_goal
+	e_update_min,
+	e_update_max,
 };
 
 typedef std::list<ConnectInfoData *> ConnectInfoList;
